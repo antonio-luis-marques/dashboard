@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "npm install --legacy-peer-deps"
+    "postinstall": "npm config set legacy-peer-deps true && npm install"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
