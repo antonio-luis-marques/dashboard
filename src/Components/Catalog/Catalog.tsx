@@ -1,37 +1,24 @@
-'use client'
-import React, { useState } from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
   TextField,
-  Button,
-  Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   MenuItem,
   Select,
+  IconButton,
+  Pagination,
 } from '@mui/material';
-import { Edit, Delete } from '@mui/icons-material';
 
-type Product = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  stock: number;
-  category: string;
-};
+import { ViewList, ViewModule } from '@mui/icons-material';
+import { Product } from '@/types/Product';
+import Form from './Form';
+import GridComponent from './Grid';
+import TableComponent from './Table';
+import ModalEditProduct from './ModalEditProduct';
+import ModalDetails from './ModalDetails';
+
 
 const ProductCatalog: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -45,18 +32,68 @@ const ProductCatalog: React.FC = () => {
     price: 0,
     stock: 0,
     category: '',
+    image: '',
   });
   const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid'); // Estado para alternar entre grade e lista
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const itemsPerPage = 8; // Número de itens por página
+
+  // Produtos para a página atual
+  const indexOfLastProduct = currentPage * itemsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
+  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleCardClick = (product: Product) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  // Funções de Paginação
+  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+    setCurrentPage(page);
+  };
+
+  const placeholderImage = 'https://placehold.co/150'; // URL do placeholder
 
   const handleAddProduct = () => {
-    if (newProduct.name && newProduct.price > 0 && newProduct.stock >= 0) {
-      setProducts([...products, { ...newProduct, id: `PROD-${Date.now()}` }]);
-      setNewProduct({ id: '', name: '', description: '', price: 0, stock: 0, category: '' });
+    if (
+      newProduct.name &&
+      newProduct.price > 0 &&
+      newProduct.stock >= 0
+    ) {
+      setProducts([
+        ...products,
+        {
+          ...newProduct,
+          id: `PROD-${Date.now()}`,
+          image: newProduct.image || placeholderImage,
+        },
+      ]);
+      setNewProduct({
+        id: '',
+        name: '',
+        description: '',
+        price: 0,
+        stock: 0,
+        category: '',
+        image: '',
+      });
     }
   };
 
   const handleEditProduct = (product: Product) => {
     setEditProduct(product);
+    handleCloseModal()
   };
 
   const handleUpdateProduct = () => {
@@ -68,6 +105,7 @@ const ProductCatalog: React.FC = () => {
 
   const handleDeleteProduct = (id: string) => {
     setProducts(products.filter((p) => p.id !== id));
+    handleCloseModal()
   };
 
   const handleSearch = (value: string) => {
@@ -80,6 +118,7 @@ const ProductCatalog: React.FC = () => {
     filterProducts(search, category);
   };
 
+
   const filterProducts = (searchValue: string, categoryValue: string) => {
     setFilteredProducts(
       products.filter(
@@ -90,87 +129,31 @@ const ProductCatalog: React.FC = () => {
     );
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result) {
+          setNewProduct({ ...newProduct, image: reader.result as string });
+        }
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
+
+  useEffect(() => {
+    filterProducts(search, filterCategory);
+  }, [products, search, filterCategory]);
+
   return (
     <Box>
       {/* Formulário para Adicionar Produto */}
-      <Card sx={{ marginBottom: 4 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Adicionar Novo Produto
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Nome"
-                fullWidth
-                value={newProduct.name}
-                onChange={(e) =>
-                  setNewProduct({ ...newProduct, name: e.target.value })
-                }
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Categoria"
-                fullWidth
-                value={newProduct.category}
-                onChange={(e) =>
-                  setNewProduct({ ...newProduct, category: e.target.value })
-                }
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="Descrição"
-                fullWidth
-                multiline
-                value={newProduct.description}
-                onChange={(e) =>
-                  setNewProduct({ ...newProduct, description: e.target.value })
-                }
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Preço (MT)"
-                type="number"
-                fullWidth
-                value={newProduct.price}
-                onChange={(e) =>
-                  setNewProduct({
-                    ...newProduct,
-                    price: Number(e.target.value) || 0,
-                  })
-                }
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Estoque"
-                type="number"
-                fullWidth
-                value={newProduct.stock}
-                onChange={(e) =>
-                  setNewProduct({
-                    ...newProduct,
-                    stock: Number(e.target.value) || 0,
-                  })
-                }
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleAddProduct}
-                fullWidth
-              >
-                Adicionar Produto
-              </Button>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+      <Form
+        handleAddProduct={handleAddProduct}
+        handleImageUpload={handleImageUpload}
+        newProduct={newProduct}
+        setNewProduct={setNewProduct}
+      />
 
       {/* Filtros e Pesquisa */}
       <Box sx={{ display: 'flex', gap: 2, marginBottom: 4 }}>
@@ -193,128 +176,68 @@ const ProductCatalog: React.FC = () => {
         </Select>
       </Box>
 
-      {/* Listagem de Produtos */}
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Produtos
-          </Typography>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Nome</TableCell>
-                  <TableCell>Categoria</TableCell>
-                  <TableCell>Preço</TableCell>
-                  <TableCell>Estoque</TableCell>
-                  <TableCell>Ações</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredProducts.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>{product.name}</TableCell>
-                    <TableCell>{product.category}</TableCell>
-                    <TableCell>MT {product.price.toFixed(2)}</TableCell>
-                    <TableCell>{product.stock}</TableCell>
-                    <TableCell>
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleEditProduct(product)}
-                      >
-                        <Edit />
-                      </IconButton>
-                      <IconButton
-                        color="secondary"
-                        onClick={() => handleDeleteProduct(product.id)}
-                      >
-                        <Delete />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredProducts.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} align="center">
-                      Nenhum produto encontrado.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
+      {/* Botão de Alternância entre Grid e Lista */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 2 }}>
+        <IconButton
+          color={viewMode === 'grid' ? 'primary' : 'default'}
+          onClick={() => setViewMode('grid')}
+        >
+          <ViewModule />
+        </IconButton>
+        <IconButton
+          color={viewMode === 'list' ? 'primary' : 'default'}
+          onClick={() => setViewMode('list')}
+        >
+          <ViewList />
+        </IconButton>
+      </Box>
+
+      {/* Exibição dos Produtos conforme o Modo de Visualização */}
+      {currentProducts.length === 0 ? (
+        <Typography variant="h6" align="center" color="textSecondary">
+          Não há produtos para exibir.
+        </Typography>
+      ) : viewMode === 'grid' ? (
+        <GridComponent
+          currentProducts={currentProducts}
+          handleCardClick={handleCardClick}
+          placeholderImage={placeholderImage}
+        />
+      ) : (
+        <TableComponent
+          currentProducts={currentProducts}
+          handleCardClick={handleCardClick}
+          handleDeleteProduct={handleDeleteProduct}
+          handleEditProduct={handleEditProduct}
+        />
+      )}
+
+      {currentProducts.length > 0 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
+          <Pagination
+            count={Math.ceil(filteredProducts.length / itemsPerPage)}
+            page={currentPage}
+            onChange={handlePageChange}
+            color="primary"
+          />
+        </Box>)}
 
       {/* Modal para Editar Produto */}
       {editProduct && (
-        <Dialog open onClose={() => setEditProduct(null)}>
-          <DialogTitle>Editar Produto</DialogTitle>
-          <DialogContent>
-            <TextField
-              label="Nome"
-              fullWidth
-              value={editProduct.name}
-              onChange={(e) =>
-                setEditProduct({ ...editProduct, name: e.target.value })
-              }
-              margin="dense"
-            />
-            <TextField
-              label="Categoria"
-              fullWidth
-              value={editProduct.category}
-              onChange={(e) =>
-                setEditProduct({ ...editProduct, category: e.target.value })
-              }
-              margin="dense"
-            />
-            <TextField
-              label="Descrição"
-              fullWidth
-              multiline
-              value={editProduct.description}
-              onChange={(e) =>
-                setEditProduct({ ...editProduct, description: e.target.value })
-              }
-              margin="dense"
-            />
-            <TextField
-              label="Preço (MT)"
-              type="number"
-              fullWidth
-              value={editProduct.price}
-              onChange={(e) =>
-                setEditProduct({
-                  ...editProduct,
-                  price: Number(e.target.value) || 0,
-                })
-              }
-              margin="dense"
-            />
-            <TextField
-              label="Estoque"
-              type="number"
-              fullWidth
-              value={editProduct.stock}
-              onChange={(e) =>
-                setEditProduct({
-                  ...editProduct,
-                  stock: Number(e.target.value) || 0,
-                })
-              }
-              margin="dense"
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEditProduct(null)} color="secondary">
-              Cancelar
-            </Button>
-            <Button onClick={handleUpdateProduct} color="primary">
-              Salvar
-            </Button>
-          </DialogActions>
-        </Dialog>
+        <ModalEditProduct
+          editProduct={editProduct}
+          handleUpdateProduct={handleUpdateProduct}
+          setEditProduct={setEditProduct}
+        />
+      )}
+      {selectedProduct && (
+        <ModalDetails 
+        handleCloseModal={handleCloseModal}
+        handleDeleteProduct={handleDeleteProduct}
+        handleEditProduct={handleEditProduct}
+        isModalOpen = {isModalOpen}
+        selectedProduct={selectedProduct}
+        />
       )}
     </Box>
   );
