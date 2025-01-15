@@ -13,11 +13,16 @@ import {
 
 import { ViewList, ViewModule } from '@mui/icons-material';
 import { Product } from '@/types/Product';
+import { EmblaOptionsType } from 'embla-carousel'
 import Form from './Form';
 import GridComponent from './Grid';
 import TableComponent from './Table';
 import ModalEditProduct from './ModalEditProduct';
 import ModalDetails from './ModalDetails';
+import EmblaCarousel from '../Carousel/EmblaCarousel';
+
+
+
 
 
 const ProductCatalog: React.FC = () => {
@@ -129,6 +134,27 @@ const ProductCatalog: React.FC = () => {
     );
   };
 
+  const OPTIONS: EmblaOptionsType = {}
+  const SLIDES = [];
+  for (let i = 0; i < filteredProducts.length; i += itemsPerPage) {
+    const currentSlice = filteredProducts.slice(i, i + itemsPerPage);
+    SLIDES.push(
+      viewMode === 'grid' ? (
+        <GridComponent
+          handleCardClick={handleCardClick}
+          placeholderImage={placeholderImage}
+          currentProducts={currentSlice} />
+      ) : (
+        <TableComponent
+          handleCardClick={handleCardClick}
+          currentProducts={currentSlice}
+          handleDeleteProduct={handleDeleteProduct}
+          handleEditProduct={handleEditProduct}
+        />
+      )
+    );
+  }
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
@@ -144,6 +170,7 @@ const ProductCatalog: React.FC = () => {
   useEffect(() => {
     filterProducts(search, filterCategory);
   }, [products, search, filterCategory]);
+
 
   return (
     <Box>
@@ -197,19 +224,8 @@ const ProductCatalog: React.FC = () => {
         <Typography variant="h6" align="center" color="textSecondary">
           Não há produtos para exibir.
         </Typography>
-      ) : viewMode === 'grid' ? (
-        <GridComponent
-          currentProducts={currentProducts}
-          handleCardClick={handleCardClick}
-          placeholderImage={placeholderImage}
-        />
       ) : (
-        <TableComponent
-          currentProducts={currentProducts}
-          handleCardClick={handleCardClick}
-          handleDeleteProduct={handleDeleteProduct}
-          handleEditProduct={handleEditProduct}
-        />
+        <EmblaCarousel slides={SLIDES} options={OPTIONS} />
       )}
 
       {currentProducts.length > 0 && (
@@ -231,12 +247,12 @@ const ProductCatalog: React.FC = () => {
         />
       )}
       {selectedProduct && (
-        <ModalDetails 
-        handleCloseModal={handleCloseModal}
-        handleDeleteProduct={handleDeleteProduct}
-        handleEditProduct={handleEditProduct}
-        isModalOpen = {isModalOpen}
-        selectedProduct={selectedProduct}
+        <ModalDetails
+          handleCloseModal={handleCloseModal}
+          handleDeleteProduct={handleDeleteProduct}
+          handleEditProduct={handleEditProduct}
+          isModalOpen={isModalOpen}
+          selectedProduct={selectedProduct}
         />
       )}
     </Box>
