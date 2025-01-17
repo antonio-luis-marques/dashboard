@@ -1,6 +1,8 @@
-import { Button, Card, CardContent, Grid, TextField, Typography } from '@mui/material'
-import React, { Dispatch, SetStateAction } from 'react'
-import { Product } from '@/types/Product'
+import { Button, Card, CardContent, Grid, TextField, Typography } from '@mui/material';
+import React, { Dispatch, SetStateAction, useState } from 'react';
+import { Product } from '@/types/Product';
+import CropImage from '../CropImage/CropImage';
+import Image from 'next/image';
 
 interface IForm {
     setNewProduct: Dispatch<SetStateAction<Product>>;
@@ -10,6 +12,25 @@ interface IForm {
 }
 
 export default function Form({ newProduct, setNewProduct, handleAddProduct, handleImageUpload }: IForm) {
+    const [croppedImage, setCroppedImage] = useState<string | null>(null);
+    const [openModal, setOpenModal] = useState<boolean>(false);
+    const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+
+    const handleImageUploadChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        handleImageUpload(e); // Chama o método que você passa como prop para atualizar o estado do produto
+        const file = e.target.files?.[0];
+        if (file) {
+            const imageUrl = URL.createObjectURL(file);
+            setImageToCrop(imageUrl); // Define a URL da imagem para o corte
+            setOpenModal(true); // Abre o modal para cortar a imagem
+        }
+    };
+    
+    const handleImageCropped = (croppedImage: string) => {
+        setCroppedImage(croppedImage); // Atualiza a imagem cortada localmente
+        setNewProduct({ ...newProduct, image: croppedImage }); // Atualiza o estado do produto com a imagem cortada
+    };
+    
     return (
         <Card sx={{ marginBottom: 4 }}>
             <CardContent>
@@ -88,24 +109,26 @@ export default function Form({ newProduct, setNewProduct, handleAddProduct, hand
                                 type="file"
                                 accept="image/*"
                                 hidden
-                                onChange={handleImageUpload}
+                                onChange={handleImageUploadChange} // Atualiza com a imagem para o corte
                             />
                         </Button>
                     </Grid>
-                    <Grid item xs={12}>
-                        {newProduct.image && (
-                            <img
-                                src={newProduct.image}
+                    <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
+                        {croppedImage && (
+                            <Image
+                                src={croppedImage}
                                 alt="Produto"
-                                style={{ width: '100%', maxHeight: '200px', objectFit: 'cover' }}
+                                width={150}
+                                height={150}
                             />
                         )}
                     </Grid>
+
                     <Grid item xs={12}>
                         <Button
                             variant="contained"
                             color="primary"
-                            onClick={handleAddProduct}
+                            onClick={() => {handleAddProduct(); setCroppedImage(null);}}
                             fullWidth
                         >
                             Adicionar Produto
@@ -113,6 +136,12 @@ export default function Form({ newProduct, setNewProduct, handleAddProduct, hand
                     </Grid>
                 </Grid>
             </CardContent>
+            <CropImage
+                image={imageToCrop || ''}
+                onImageCropped={handleImageCropped}
+                open={openModal}
+                onClose={() => setOpenModal(false)}
+            />
         </Card>
-    )
+    );
 }

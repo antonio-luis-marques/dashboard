@@ -42,6 +42,8 @@ const ProductCatalog: React.FC = () => {
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid'); // Estado para alternar entre grade e lista
   const [currentPage, setCurrentPage] = useState(1);
+  const [croppedImage, setCroppedImage] = useState<string | null>(null);
+
 
   const itemsPerPage = 8; // Número de itens por página
 
@@ -133,6 +135,7 @@ const ProductCatalog: React.FC = () => {
       )
     );
   };
+  
 
   const OPTIONS: EmblaOptionsType = {}
   const SLIDES = [];
@@ -227,16 +230,6 @@ const ProductCatalog: React.FC = () => {
       ) : (
         <EmblaCarousel slides={SLIDES} options={OPTIONS} />
       )}
-
-      {currentProducts.length > 0 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
-          <Pagination
-            count={Math.ceil(filteredProducts.length / itemsPerPage)}
-            page={currentPage}
-            onChange={handlePageChange}
-            color="primary"
-          />
-        </Box>)}
 
       {/* Modal para Editar Produto */}
       {editProduct && (

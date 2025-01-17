@@ -1,37 +1,45 @@
-import React from 'react'
-import { EmblaOptionsType } from 'embla-carousel'
-import { DotButton, useDotButton } from './EmblaCarouselDotButton'
-import {
-  PrevButton,
-  NextButton,
-  usePrevNextButtons
-} from './EmblaCarouselArrowButtons'
-
-import useEmblaCarousel from 'embla-carousel-react'
+import React from 'react';
+import { EmblaOptionsType } from 'embla-carousel';
+import { Pagination } from '@mui/material';
+import useEmblaCarousel from 'embla-carousel-react';
 
 type PropType = {
   slides: React.ReactNode[]; // Aceita JSX ao invés de números
-  options?: EmblaOptionsType
-}
+  options?: EmblaOptionsType;
+};
 
 const EmblaCarousel: React.FC<PropType> = (props) => {
-  const { slides, options } = props
-  const [emblaRef, emblaApi] = useEmblaCarousel(options)
+  const { slides, options } = props;
+  const [emblaRef, emblaApi] = useEmblaCarousel(options);
 
-  const { selectedIndex, scrollSnaps, onDotButtonClick } =
-    useDotButton(emblaApi)
+  const [selectedIndex, setSelectedIndex] = React.useState(0);
+  const [scrollSnaps, setScrollSnaps] = React.useState<number[]>([]);
 
-  const {
-    prevBtnDisabled,
-    nextBtnDisabled,
-    onPrevButtonClick,
-    onNextButtonClick
-  } = usePrevNextButtons(emblaApi)
+  React.useEffect(() => {
+    if (!emblaApi) return;
 
+    const updateScrollSnaps = () => setScrollSnaps(emblaApi.scrollSnapList());
+    const updateSelectedIndex = () => setSelectedIndex(emblaApi.selectedScrollSnap());
 
-  
+    emblaApi.on('reInit', updateScrollSnaps);
+    emblaApi.on('select', updateSelectedIndex);
+
+    updateScrollSnaps();
+    updateSelectedIndex();
+
+    return () => {
+      emblaApi.off('reInit', updateScrollSnaps);
+      emblaApi.off('select', updateSelectedIndex);
+    };
+  }, [emblaApi]);
+
+  const handlePaginationChange = (_: React.ChangeEvent<unknown>, page: number) => {
+    if (!emblaApi) return;
+    emblaApi.scrollTo(page - 1); // MUI Pagination starts at 1
+  };
+
   return (
-    <section className="embla">
+    <section className="embla w-full">
       <div className="embla__viewport" ref={emblaRef}>
         <div className="embla__container">
           {slides.map((slide, index) => (
@@ -42,26 +50,17 @@ const EmblaCarousel: React.FC<PropType> = (props) => {
         </div>
       </div>
 
-      <div className="embla__controls">
-        <div className="embla__buttons">
-          <PrevButton onClick={onPrevButtonClick} disabled={prevBtnDisabled} />
-          <NextButton onClick={onNextButtonClick} disabled={nextBtnDisabled} />
-        </div>
-
-        <div className="embla__dots">
-          {scrollSnaps.map((_, index) => (
-            <DotButton
-              key={index}
-              onClick={() => onDotButtonClick(index)}
-              className={'embla__dot'.concat(
-                index === selectedIndex ? ' embla__dot--selected' : ''
-              )}
-            />
-          ))}
-        </div>
+      <div className="embla__controls ">
+        <Pagination
+          count={scrollSnaps.length} // Total de páginas
+          page={selectedIndex + 1} // MUI usa indexação começando de 1
+          onChange={handlePaginationChange}
+          color="primary"
+          className="embla__pagination"
+        />
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default EmblaCarousel
+export default EmblaCarousel;

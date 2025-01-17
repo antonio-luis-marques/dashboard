@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true, // Ignora erros do ESLint no build
   },
+  images: {
+    domains: ['placehold.co'], // Adicione o domínio aqui
+  },
   typescript: {
     ignoreBuildErrors: true, // Ignora erros do TypeScript no build
   },

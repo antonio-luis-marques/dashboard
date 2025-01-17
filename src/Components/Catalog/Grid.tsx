@@ -1,5 +1,7 @@
+'use client'
 import { Product } from '@/types/Product'
 import { Card, CardContent, Grid, Typography } from '@mui/material'
+import Image from 'next/image';
 import React from 'react'
 
 interface IGridComponent{
@@ -26,13 +28,12 @@ export default function GridComponent({currentProducts, handleCardClick, placeho
                                 justifyContent: 'center',
                             }}
                         >
-                            <img
-                                src={placeholderImage} // Use o placeholder caso não haja imagem
+                            <Image
+                                src={product.image ? product.image : placeholderImage} // Use o placeholder caso não haja imagem
                                 alt={product.name}
+                                width={150}
+                                height={150}
                                 style={{
-                                    width: '100%',
-                                    maxHeight: '150px',
-                                    objectFit: 'cover',
                                     marginBottom: '8px',
                                 }}
                             />
